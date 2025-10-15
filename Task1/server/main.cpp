@@ -4,7 +4,7 @@
 #include "../common/Student.h"
 #include "FileParser.h"
 #include "StudentMerger.h"
-#include "ZmqPublisher.h"
+#include "ZmqSyncedPublisher.h"
 
 int main() {
   std::cout << "╔════════════════════════════════════════════════════╗"
@@ -47,11 +47,10 @@ int main() {
   // Шаг 3: Публикация через ZeroMQ
   std::cout << "\n📖 ШАГ 3: Публикация данных через ZeroMQ\n" << std::endl;
 
-  const std::string endpoint = "tcp://*:5555";
-  ZmqPublisher publisher(endpoint);
+  ZmqSyncedPublisher publisher("tcp://*:5555", "tcp://*:5556");
 
-  // Запускаем публикацию в отдельном потоке
-  publisher.start(mergedStudents);
+  // Запускаем публикацию в отдельном потоке, ожидаем 2-х клиентов
+  publisher.start(mergedStudents, 2);
 
   // Ждем завершения публикации
   std::cout << "\n⏳ Ожидание завершения публикации..." << std::endl;

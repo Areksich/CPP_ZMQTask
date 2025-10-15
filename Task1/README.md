@@ -18,11 +18,11 @@
 1. **FileParser** - Чтение и парсинг файлов со студентами
 2. **Validator** - Валидация данных (даты, имена, ID)
 3. **StudentMerger** - Объединение дубликатов по ФИО и дате рождения
-4. **ZmqPublisher** - Публикация данных через ZeroMQ PUB в отдельном потоке
+4. **ZmqSyncedPublisher** - Публикация данных через ZeroMQ PUB в отдельном потоке
 5. **Serializer** - Сериализация/десериализация данных
 
 ### Клиентская часть
-1. **ZmqSubscriber** - Получение данных через ZeroMQ SUB в отдельном потоке
+1. **ZmqSyncedSubscriber** - Получение данных через ZeroMQ SUB в отдельном потоке
 2. **Serializer** - Десериализация данных
 3. **Validator** - Валидация полученных данных
 4. **StudentSorter** - Сортировка и отображение студентов
@@ -104,9 +104,9 @@ g++ -std=c++17 -I./common -I./client \
 - ✅ Объединение дубликатов
 - ✅ Публикацию через ZeroMQ на `tcp://*:5555`
 
-### 2. Запуск клиента
+### 2. Запуск 2-х клиентов
 
-Во втором терминале:
+Во втором и третьем терминале:
 ```bash
 ./client_app
 ```
@@ -177,7 +177,7 @@ ID             ФИО                                Дата рождения
 
 ```
 project/
-├── CMakeLists.txt              # Конфигурация сборки
+├── Makefile                    # Сборка проекта
 ├── README.md                   # Документация
 ├── student_file_1.txt          # Тестовые данные
 ├── student_file_2.txt          # Тестовые данные
@@ -191,11 +191,11 @@ project/
 │   ├── main.cpp                # Главный файл сервера
 │   ├── FileParser.h            # Парсинг файлов
 │   ├── StudentMerger.h         # Объединение студентов
-│   └── ZmqPublisher.h          # ZeroMQ Publisher
+│   └── ZmqSyncedPublisher.h    # ZeroMQ Publisher
 │
 └── client/                     # Клиентская часть
     ├── main.cpp                # Главный файл клиента
-    ├── ZmqSubscriber.h         # ZeroMQ Subscriber
+    ├── ZmqSyncedSubscriber.h   # ZeroMQ Subscriber
     └── StudentSorter.h         # Сортировка и вывод
 ```
 
@@ -237,7 +237,7 @@ project/
 - Объединение ID дубликатов
 - Map-based реализация для эффективности
 
-#### ZmqPublisher.h
+#### ZmqSyncedPublisher.h
 Публикация данных:
 - ✅ Работа в отдельном потоке
 - ✅ ZeroMQ PUB сокет
@@ -247,7 +247,7 @@ project/
 
 ### Client (Клиентские модули)
 
-#### ZmqSubscriber.h
+#### ZmqSyncedSubscriber.h
 Получение данных:
 - ✅ Работа в отдельном потоке
 - ✅ ZeroMQ SUB сокет

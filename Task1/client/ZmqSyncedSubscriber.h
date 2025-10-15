@@ -9,12 +9,16 @@
 #include "../common/Student.h"
 #include "Serializer.h"
 
-class ZmqSubscriber {
+class ZmqSyncedSubscriber {
  public:
-  ZmqSubscriber(const std::string& endpoint)
-      : endpoint_(endpoint), running_(false), dataReceived_(false) {}
+  ZmqSyncedSubscriber(const std::string& subEndpoint,
+                      const std::string& syncEndpoint)
+      : subEndpoint_(subEndpoint),
+        syncEndpoint_(syncEndpoint),
+        running_(false),
+        dataReceived_(false) {}
 
-  ~ZmqSubscriber() { stop(); }
+  ~ZmqSyncedSubscriber() { stop(); }
 
   // Запуск подписки в отдельном потоке
   void start() {
@@ -25,10 +29,9 @@ class ZmqSubscriber {
 
     running_ = true;
     dataReceived_ = false;
-    subscribeThread_ = std::thread(&ZmqSubscriber::subscribeLoop, this);
+    subscribeThread_ = std::thread(&ZmqSyncedSubscriber::subscribeLoop, this);
 
-    std::cout << "📡 Subscriber запущен, подключение к " << endpoint_
-              << std::endl;
+    std::cout << "📡 Synced Subscriber запущен" << std::endl;
   }
 
   // Остановка подписки
@@ -40,7 +43,7 @@ class ZmqSubscriber {
       subscribeThread_.join();
     }
 
-    std::cout << "📡 Subscriber остановлен" << std::endl;
+    std::cout << "📡 Synced Subscriber остановлен" << std::endl;
   }
 
   // Получение принятых данных
@@ -50,35 +53,58 @@ class ZmqSubscriber {
   }
 
   bool isDataReceived() const { return dataReceived_; }
-
   bool isRunning() const { return running_; }
 
  private:
   void subscribeLoop() {
     try {
-      // Создаем ZMQ контекст и сокет
       zmq::context_t context(1);
+
+      // SUB сокет для получения данных
       zmq::socket_t subscriber(context, zmq::socket_type::sub);
-
-      // Подключаемся к publisher
-      subscriber.connect(endpoint_);
-
-      // Подписываемся на топик "students"
+      subscriber.connect(subEndpoint_);
       subscriber.set(zmq::sockopt::subscribe, "students");
 
+      // REQ сокет для синхронизации с publisher
+      zmq::socket_t syncClient(context, zmq::socket_type::req);
+      syncClient.connect(syncEndpoint_);
+
+      std::cout << "📡 Подключение к серверу:" << std::endl;
+      std::cout << "   SUB: " << subEndpoint_ << std::endl;
+      std::cout << "   SYNC: " << syncEndpoint_ << std::endl;
+
+      // Отправляем сигнал готовности publisher'у
+      std::cout << "📤 Отправка сигнала готовности..." << std::endl;
+      zmq::message_t syncMsg(5);
+      memcpy(syncMsg.data(), "READY", 5);
+      syncClient.send(syncMsg, zmq::send_flags::none);
+
+      // Ждем подтверждения
+      zmq::message_t reply;
+      auto result = syncClient.recv(reply, zmq::recv_flags::none);
+
+      if (!result) {
+        std::cerr << "❌ Не получено подтверждение от сервера" << std::endl;
+        running_ = false;
+        return;
+      }
+
+      std::cout << "✅ Получено подтверждение, готов к приему данных"
+                << std::endl;
+
       // Устанавливаем таймаут получения
-      subscriber.set(zmq::sockopt::rcvtimeo, 1000);  // 1 секунда
+      subscriber.set(zmq::sockopt::rcvtimeo, 1000);
 
       std::cout << "⏳ Ожидание данных..." << std::endl;
 
       int attempts = 0;
-      const int MAX_ATTEMPTS = 30;  // 30 секунд ожидания
+      const int MAX_ATTEMPTS = 30;
 
       while (running_ && attempts < MAX_ATTEMPTS) {
         try {
           // Получаем топик
           zmq::message_t topic;
-          auto result = subscriber.recv(topic, zmq::recv_flags::none);
+          result = subscriber.recv(topic, zmq::recv_flags::none);
 
           if (!result) {
             attempts++;
@@ -99,7 +125,6 @@ class ZmqSubscriber {
 
           // Десериализуем данные
           std::string data(static_cast<char*>(message.data()), message.size());
-
           std::vector<Student> students = Serializer::deserialize(data);
 
           std::cout << "✅ Десериализовано " << students.size() << " студентов"
@@ -115,7 +140,7 @@ class ZmqSubscriber {
           break;
 
         } catch (const zmq::error_t& e) {
-          if (e.num() != EAGAIN) {  // Игнорируем таймауты
+          if (e.num() != EAGAIN) {
             throw;
           }
           attempts++;
@@ -127,13 +152,14 @@ class ZmqSubscriber {
       }
 
     } catch (const zmq::error_t& e) {
-      std::cerr << "❌ ZMQ Subscriber ошибка: " << e.what() << std::endl;
+      std::cerr << "❌ ZMQ Synced Subscriber ошибка: " << e.what() << std::endl;
     }
 
     running_ = false;
   }
 
-  std::string endpoint_;
+  std::string subEndpoint_;
+  std::string syncEndpoint_;
   std::atomic<bool> running_;
   std::atomic<bool> dataReceived_;
   std::thread subscribeThread_;

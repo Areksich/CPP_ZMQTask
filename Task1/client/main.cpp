@@ -4,7 +4,7 @@
 
 #include "../common/Student.h"
 #include "StudentSorter.h"
-#include "ZmqSubscriber.h"
+#include "ZmqSyncedSubscriber.h"
 
 int main() {
   std::cout << "╔════════════════════════════════════════════════════╗"
@@ -18,8 +18,8 @@ int main() {
   // Шаг 1: Подключение к серверу
   std::cout << "📖 ШАГ 1: Подключение к серверу\n" << std::endl;
 
-  const std::string endpoint = "tcp://localhost:5555";
-  ZmqSubscriber subscriber(endpoint);
+  ZmqSyncedSubscriber subscriber("tcp://localhost:5555",
+                                 "tcp://localhost:5556");
 
   // Запускаем подписку в отдельном потоке
   subscriber.start();
@@ -28,7 +28,7 @@ int main() {
   std::cout << "\n⏳ Ожидание данных от сервера..." << std::endl;
 
   int waitTime = 0;
-  const int MAX_WAIT_TIME = 30;  // 30 секунд
+  const int MAX_WAIT_TIME = 60;  // 60 секунд
 
   while (!subscriber.isDataReceived() && waitTime < MAX_WAIT_TIME) {
     std::this_thread::sleep_for(std::chrono::seconds(1));

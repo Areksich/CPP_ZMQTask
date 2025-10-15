@@ -20,10 +20,10 @@ COMMON_HEADERS = $(COMMON_DIR)/Student.h \
 
 SERVER_HEADERS = $(SERVER_DIR)/FileParser.h \
                  $(SERVER_DIR)/StudentMerger.h \
-                 $(SERVER_DIR)/ZmqPublisher.h \
+                 $(SERVER_DIR)/ZmqSyncedPublisher.h \
                  $(COMMON_HEADERS)
 
-CLIENT_HEADERS = $(CLIENT_DIR)/ZmqSubscriber.h \
+CLIENT_HEADERS = $(CLIENT_DIR)/ZmqSyncedSubscriber.h \
                  $(CLIENT_DIR)/StudentSorter.h \
                  $(COMMON_HEADERS)
 
