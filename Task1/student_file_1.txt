@@ -1,0 +1,6 @@
+1 Ivan Ivanovich Ivanov 01.01.1988
+2 Petr Petrovich Petrov 04.07.1988
+3 Denis Denisovich Denisov 43.01.1988
+4 Vladimir Vladimirovich Jukov 04.5.1987
+5 Vladimir Vladimirovich Kochkin 11.10.1989
+

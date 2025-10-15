@@ -1,0 +1,6 @@
+34 Ivan Ivanovich Ivanov 01.01.1988
+54 Petr Petrovich Kazakov 05.07.1986
+23 Denis Denisovich Denisov 04.03.1988
+12 Vladimir Vladimirovich Jukov 04.5.1987
+43 Vladimir Vladimirovich Kochkin 11.11.1989
+
